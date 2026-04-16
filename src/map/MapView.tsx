@@ -74,10 +74,6 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
         svg.setAttribute('height', '100%');
         svg.style.maxWidth = '100%';
 
-        // Hide the brief label layer (abbreviations)
-        const briefLabels = svg.querySelector('#BriefLabelLayer');
-        if (briefLabels) (briefLabels as HTMLElement).style.display = 'none';
-
         // Hide current note and phase text
         const currentNote = svg.querySelector('#CurrentNote');
         if (currentNote) (currentNote as HTMLElement).style.display = 'none';
@@ -85,35 +81,55 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
         if (currentNote2) (currentNote2 as HTMLElement).style.display = 'none';
         const currentPhase = svg.querySelector('#CurrentPhase');
         if (currentPhase) (currentPhase as HTMLElement).style.display = 'none';
-        // Hide the note background rectangle
         svg.querySelectorAll('.currentnoterect').forEach(el => (el as HTMLElement).style.display = 'none');
 
-        // Crop the viewBox to remove bottom whitespace
         svg.setAttribute('viewBox', '0 0 1835 1360');
         svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-        // Add full province name labels
-        const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        labelGroup.setAttribute('id', 'FullLabelLayer');
-        for (const prov of PROVINCES) {
-          const pos = UNIT_POSITIONS[prov.id];
-          if (!pos) continue;
-          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          text.setAttribute('x', String(pos.x));
-          text.setAttribute('y', String(pos.y + (prov.type === ProvinceType.Sea ? 0 : 28)));
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('font-size', prov.type === ProvinceType.Sea ? '22' : '18');
-          text.setAttribute('font-family', 'Georgia, serif');
-          text.setAttribute('font-style', 'italic');
-          text.setAttribute('fill', '#111');
-          text.setAttribute('stroke', 'white');
-          text.setAttribute('stroke-width', '4');
-          text.setAttribute('paint-order', 'stroke fill');
-          text.style.pointerEvents = 'none';
-          text.textContent = prov.name;
-          labelGroup.appendChild(text);
+        // Replace abbreviation labels with full province names
+        // The SVG already has well-positioned labels — just swap the text
+        const ABBR_TO_FULL: Record<string, string> = {
+          'SWI': 'Switzerland', 'ADR': 'Adriatic Sea', 'AEG': 'Aegean Sea',
+          'ALB': 'Albania', 'ANK': 'Ankara', 'APU': 'Apulia', 'ARM': 'Armenia',
+          'BAL': 'Baltic Sea', 'BAR': 'Barents Sea', 'BEL': 'Belgium',
+          'BER': 'Berlin', 'BLA': 'Black Sea', 'BOH': 'Bohemia', 'BRE': 'Brest',
+          'BUD': 'Budapest', 'BUL': 'Bulgaria', 'BUR': 'Burgundy', 'CLY': 'Clyde',
+          'CON': 'Constantinople', 'DEN': 'Denmark', 'EAS': 'East. Med.',
+          'EDI': 'Edinburgh', 'ENG': 'English Channel', 'FIN': 'Finland',
+          'GAL': 'Galicia', 'GAS': 'Gascony', 'GRE': 'Greece',
+          'BOT': 'Gulf of Bothnia', 'LYO': 'Gulf of Lyon', 'HEL': 'Helgoland',
+          'HOL': 'Holland', 'ION': 'Ionian Sea', 'IRI': 'Irish Sea',
+          'KIE': 'Kiel', 'LON': 'London', 'LVN': 'Livonia', 'LVP': 'Liverpool',
+          'MAR': 'Marseilles', 'MAO': 'Mid-Atlantic', 'MOS': 'Moscow',
+          'MUN': 'Munich', 'NAF': 'N. Africa', 'NAP': 'Naples',
+          'NAO': 'N. Atlantic', 'NTH': 'North Sea', 'NWY': 'Norway',
+          'NWG': 'Norwegian Sea', 'PAR': 'Paris', 'PIC': 'Picardy',
+          'PIE': 'Piedmont', 'POR': 'Portugal', 'PRU': 'Prussia',
+          'ROM': 'Rome', 'RUH': 'Ruhr', 'RUM': 'Rumania', 'SER': 'Serbia',
+          'SEV': 'Sevastopol', 'SIL': 'Silesia', 'SKA': 'Skagerrak',
+          'SMY': 'Smyrna', 'SPA': 'Spain', 'STP': 'St. Petersburg',
+          'SWE': 'Sweden', 'SYR': 'Syria', 'TRI': 'Trieste', 'TUN': 'Tunis',
+          'TUS': 'Tuscany', 'TYR': 'Tyrolia', 'TYS': 'Tyrrhenian Sea',
+          'UKR': 'Ukraine', 'VEN': 'Venice', 'VIE': 'Vienna', 'WAL': 'Wales',
+          'WAR': 'Warsaw', 'WES': 'West. Med.', 'YOR': 'Yorkshire',
+        };
+
+        const labelLayer = svg.querySelector('#BriefLabelLayer');
+        if (labelLayer) {
+          const texts = labelLayer.querySelectorAll('text');
+          texts.forEach(textEl => {
+            const abbr = textEl.textContent?.trim() || '';
+            const full = ABBR_TO_FULL[abbr];
+            if (full) {
+              textEl.textContent = full;
+            }
+            // Add white outline for readability
+            textEl.setAttribute('stroke', 'white');
+            textEl.setAttribute('stroke-width', '3');
+            textEl.setAttribute('paint-order', 'stroke fill');
+            textEl.style.pointerEvents = 'none';
+          });
         }
-        svg.appendChild(labelGroup);
 
         container.innerHTML = '';
         container.appendChild(svg);
