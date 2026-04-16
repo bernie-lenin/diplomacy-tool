@@ -116,6 +116,8 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
 
         const labelLayer = svg.querySelector('#BriefLabelLayer');
         if (labelLayer) {
+          // Ensure the entire label group doesn't block clicks to provinces
+          (labelLayer as HTMLElement).style.pointerEvents = 'none';
           const texts = labelLayer.querySelectorAll('text');
           texts.forEach(textEl => {
             const abbr = textEl.textContent?.trim() || '';
