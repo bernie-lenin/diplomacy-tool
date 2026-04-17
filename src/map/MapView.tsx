@@ -181,13 +181,37 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
         el.style.strokeWidth = '4';
       }
 
-      // Make clickable
+      // Don't set onclick here — click layer handles it
       el.style.cursor = 'pointer';
-      el.onclick = () => {
+    }
+
+    // Create a transparent click layer on top of everything
+    // This ensures clicking anywhere in a province works, even over
+    // unit symbols, labels, SC markers, or order arrows
+    svg.querySelectorAll('.click-layer').forEach(el => el.remove());
+    const clickGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    clickGroup.classList.add('click-layer');
+
+    for (const prov of PROVINCES) {
+      const svgId = provinceIdToSvgId(prov.id);
+      const original = svg.querySelector(`#${svgId}`) as SVGPathElement | null;
+      if (!original) continue;
+
+      const clone = original.cloneNode(false) as SVGPathElement;
+      clone.removeAttribute('id');
+      clone.removeAttribute('class');
+      clone.style.fill = 'transparent';
+      clone.style.stroke = 'none';
+      clone.style.cursor = 'pointer';
+      clone.style.pointerEvents = 'all';
+      clone.onclick = () => {
         const provId = svgIdToProvinceId(svgId);
         if (provId) onProvinceClick(provId);
       };
+      clickGroup.appendChild(clone);
     }
+
+    svg.appendChild(clickGroup);
   }, [gameState, svgLoaded, selectedUnit, validTargets, onProvinceClick]);
 
   // Draw units and orders on top of the SVG
@@ -237,11 +261,7 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
 
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.classList.add('unit-overlay');
-      g.style.cursor = 'pointer';
-      g.onclick = (e) => {
-        e.stopPropagation();
-        onProvinceClick(unit.provinceId);
-      };
+      g.style.pointerEvents = 'none';
 
       if (unit.type === UnitType.Army) {
         // Army: rounded rectangle
@@ -361,11 +381,7 @@ export function MapView({ gameState, orders, selectedUnit, validTargets, onProvi
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.classList.add('unit-overlay');
       g.style.opacity = '0.6';
-      g.style.cursor = 'pointer';
-      g.onclick = (e) => {
-        e.stopPropagation();
-        onProvinceClick(d.unit.provinceId);
-      };
+      g.style.pointerEvents = 'none';
 
       // Red halo
       const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
